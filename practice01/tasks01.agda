@@ -1,5 +1,7 @@
 module tasks01 where
 
+-- open import Relation.Binary.PropositionalEquality
+
 -- 0. Определить flip, const
 
 flip : {A B C : Set} → (A → B → C) → B → A → C
@@ -93,12 +95,18 @@ _++_ : {A : Set} → List A → List A → List A
 nil ++ ys = ys
 cons x xs ++ ys = cons x (xs ++ ys)
 
-reverse' : {A : Set} → List A → List A → List A
-reverse' l nil = l
-reverse' l (cons x xs) = reverse' (cons x l) xs
-
+-- стремный reverse за квадрат
 reverse : {A : Set} → List A → List A
-reverse = reverse' nil
+reverse nil = nil
+reverse (cons x xs) = (reverse xs) ++ (cons x nil)
+
+-- O(n)
+rev-acc : {A : Set} → List A → List A → List A
+rev-acc l nil = l
+rev-acc l (cons x xs) = rev-acc (cons x l) xs
+
+rev : {A : Set} → List A → List A
+rev = rev-acc nil
 
 -- 5. Реализовать любой алгоритм сортировки
 
@@ -154,11 +162,11 @@ fac3=6 : T (fac (suc (suc (suc zero))) ==' suc (suc (suc (suc (suc (suc zero))))
 fac3=6 = unit
 
 fac2≠3 : T (fac (suc (suc zero)) ==' suc (suc (suc zero))) → Empty
-fac2≠3 ()
+fac2≠3 = absurd
 
 -- 8. Определите равенство для списков натуральных чисел; докажите, что для любого xs : List ℕ верно, что reverse (reverse xs) равно xs
 
-infix 3 _&&_
+infix 2 _&&_
 _&&_ : Bool → Bool → Bool
 true && x = x
 _ && false = false
@@ -171,6 +179,7 @@ nil === cons _ _ = false
 cons _ _ === nil = false
 (cons x xs) === (cons y ys) = (x ==' y) && (xs === ys)
 
+-- примеры термов, игрался с C-c C-n
 one = suc zero
 two = suc one
 three = suc two
@@ -178,8 +187,18 @@ three = suc two
 l = cons one (cons two (cons three nil))
 l' = reverse l
 
-reverse-inv : (xs : List ℕ) → T (reverse (reverse xs) === xs)
-reverse-inv nil = unit
-reverse-inv (cons x xs) = {!!}
+lm₀ : (x : ℕ) (xs : List ℕ) → T ((x ==' x) && (xs === xs))
+lm₀ zero nil = unit
+lm₀ zero (cons x xs) = lm₀ x xs
+lm₀ (suc x) xs = lm₀ x xs
 
+refl : (xs : List ℕ) → T (xs === xs)
+refl nil = unit
+refl (cons x xs) = lm₀ x xs
 
+lm₁ : (xs ys : List ℕ) → T (rev (rev-acc ys xs) === rev-acc xs ys)
+lm₁ nil ys = refl (rev ys)
+lm₁ (cons x xs) ys = lm₁ xs (cons x ys)
+
+reverse-reverse-acc : (xs : List ℕ) → T (rev (rev xs) === xs)
+reverse-reverse-acc xs = lm₁ xs nil
