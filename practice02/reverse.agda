@@ -51,7 +51,7 @@ suc x == suc y = x == y
 
 infix 2 _&&_
 _&&_ : Bool → Bool → Bool
-true && x = x
+true && true = true
 _ && _ = false
 
 _=='_ : List ℕ → List ℕ → Bool
@@ -69,14 +69,19 @@ T : Bool → Set
 T true = Unit
 T false = Empty
 
-lm₀ : (x : ℕ) (xs : List ℕ) → T ((x == x) && (xs ==' xs))
-lm₀ zero nil = unit
-lm₀ zero (cons x xs) = lm₀ x xs
-lm₀ (suc x) xs = lm₀ x xs
+T-&& : (x y : Bool) → T x → T y → T (x && y)
+T-&& true true x x₁ = unit
+T-&& true false x()
+T-&& false true()
+T-&& false false()
+
+ℕ-refl : (x : ℕ) → T (x == x)
+ℕ-refl zero = unit
+ℕ-refl (suc x) = ℕ-refl x
 
 list-refl : (xs : List ℕ) → T (xs ==' xs)
 list-refl nil = unit
-list-refl (cons x xs) = lm₀ x xs
+list-refl (cons x xs) = T-&& (x == x) (xs ==' xs) (ℕ-refl x) (list-refl xs)
 
 rev-rev-acc : (ys xs : List ℕ) → T (rev (rev-acc ys xs) ==' rev-acc xs ys)
 rev-rev-acc ys nil = list-refl (rev ys)
