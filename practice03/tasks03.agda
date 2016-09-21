@@ -15,6 +15,9 @@ data Vec (A : Set) : ℕ → Set where
 head : {A : Set} {n : ℕ} → Vec A (suc n) → A
 head (cons x _) = x
 
+tail : {A : Set} {n : ℕ} → Vec A (suc n) → Vec A n
+tail = {!   !}
+
 -- 1. Реализуйте аналоги функции map для vec и Vec.
 
 map₁ : {A B : Set} {n : ℕ} → (A → B) → vec A n → vec B n
@@ -54,7 +57,7 @@ coin {n = suc n} f = cons (f zero) (coin (λ n₁ → f (suc n₁)))
 -- 4. Определите тип матриц и ряд функций над ними.
 
 Mat : Set → ℕ → ℕ → Set
-Mat A n m = Vec (Vec A n) m
+Mat A n m = Vec (Vec A m) n
 
 -- диагональная матрица
 
@@ -68,7 +71,7 @@ transpose : {A : Set} {n m : ℕ} → Mat A n m → Mat A m n
 transpose nil = coin (λ _ → nil)
 transpose (cons M M₁) = zipWith₂ cons M (transpose M₁)
 
-mat : Mat ℕ 3 1
+mat : Mat ℕ 1 3
 mat = cons (cons 1 (cons 2 (cons 3 nil))) nil
 
 -- сложение матриц
@@ -79,11 +82,27 @@ add _+_ (cons M M₁) (cons N N₁) = cons (zipWith₂ _+_ M N) (add _+_ M₁ N�
 
 -- умножение матриц
 
-mul : {A : Set} (_+_ _*_ : A → A → A) → {n m k : ℕ} → Mat A n m → Mat A m k → Mat A n k
-mul _+_ _*_ nil nil = nil
-mul _+_ _*_ nil (cons N N₁) = cons {!   !} {!   !} 
-mul _+_ _*_ (cons M M₁) nil = nil
-mul _+_ _*_ (cons M M₁) (cons N N₁) = {!   !}
+sum : {A : Set} (_+_ : A → A → A) → {n : ℕ} → Vec A (suc n) → A
+sum _+_ {zero} (cons x v) = x
+sum _+_ {suc n} (cons x v) = x + (sum _+_ v)
+
+-- scalar(or dot) product
+scalar : {A : Set} {n : ℕ} → (_+_ _*_ : A → A → A) → Vec A (suc n) → Vec A (suc n) → A
+scalar _+_ _*_ x y = sum (_+_) (zipWith₂ (_*_) x y)
+
+-- сначала стобцы, потом строки!
+-- Mat ℕ 3 2
+-- [1,2,3]
+-- [4,5,6]
+
+-- умножение матрицы на вектор
+_**_ : {A : Set} (_+_ _*_ : A → A → A) → {n m : ℕ} → Mat A (suc n) (suc m) → Vec A (suc m) → Vec A (suc n)
+_**_ _+_ _*_ m v = map₂ (λ r → scalar _+_ _*_ r v) m
+
+mul : {A : Set} (_+_ _*_ : A → A → A) → {n m k : ℕ} → Mat A (suc n) (suc m) → Mat A (suc m) (suc k) → Mat A (suc n) (suc k)
+mul _+_ _*_ x y = map₂ (λ r → _**_ _+_ _*_ yt r) x
+  where
+    yt = transpose y
 
 -- 5. Определите при помощи индуктивных семейств тип CTree A n бинарных деревьев высоты ровно n с элементами во внутренних узлах.
 --    Любое такое бинарное дерево будет полным.
@@ -99,7 +118,7 @@ data CTree (A : Set) : ℕ → Set where
 -- 6. Определите при помощи индуктивных семейств тип Tree A n бинарных деревьев высоты не больше n с элементами во внутренних узлах.
 
 data Tree (A : Set) : ℕ → Set where
-
+  
 -- определите функцию, возвращающую высоту дерева.
 
 height : {A : Set} (n : ℕ) → Tree A n → Fin (suc n)
