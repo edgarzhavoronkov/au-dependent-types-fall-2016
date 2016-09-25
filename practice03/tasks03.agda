@@ -2,7 +2,9 @@ module tasks03 where
 
 open import Data.Nat
 open import Data.Unit
+open import Data.Empty
 open import Data.Product
+open import Data.Bool
 
 vec : Set → ℕ → Set
 vec A 0 = ⊤
@@ -11,12 +13,6 @@ vec A (suc n) = A × vec A n
 data Vec (A : Set) : ℕ → Set where
   nil : Vec A 0
   cons : {n : ℕ} → A → Vec A n → Vec A (suc n)
-
-head : {A : Set} {n : ℕ} → Vec A (suc n) → A
-head (cons x _) = x
-
-tail : {A : Set} {n : ℕ} → Vec A (suc n) → Vec A n
-tail = {!   !}
 
 -- 1. Реализуйте аналоги функции map для vec и Vec.
 
@@ -46,6 +42,7 @@ data Fin : ℕ → Set where
   zero : {n : ℕ} → Fin (suc n)
   suc : {n : ℕ} → Fin n → Fin (suc n)
 
+
 index : {A : Set} {n : ℕ} → Vec A n → (k : Fin n) → A
 index (cons x xs) zero = x
 index (cons x xs) (suc k) = index xs k
@@ -59,20 +56,21 @@ coin {n = suc n} f = cons (f zero) (coin (λ n₁ → f (suc n₁)))
 Mat : Set → ℕ → ℕ → Set
 Mat A n m = Vec (Vec A m) n
 
+-- Vec (Vec ℕ 3) 2
+mat : Mat ℕ 2 3
+mat = cons (cons 1 (cons 2 (cons 3 nil))) (cons (cons 4 (cons 5 (cons 6 nil))) nil)
+
 -- диагональная матрица
 
 diag : {A : Set} → A → A → {n : ℕ} → Mat A n n
-diag z o {zero} = nil
-diag z o {suc n} = cons (cons z (coin (λ _ → o))) (map₂ (λ l -> cons o l) (diag z o {n}))
+diag a b {zero} = nil
+diag a b {suc n} = cons (cons a (coin (λ _ → b))) (map₂ (λ r → cons b r) (diag a b {n}))
 
 -- транспонирование матриц
 
 transpose : {A : Set} {n m : ℕ} → Mat A n m → Mat A m n
 transpose nil = coin (λ _ → nil)
-transpose (cons M M₁) = zipWith₂ cons M (transpose M₁)
-
-mat : Mat ℕ 1 3
-mat = cons (cons 1 (cons 2 (cons 3 nil))) nil
+transpose (cons m₁ m₂) = zipWith₂ cons m₁ (transpose m₂)
 
 -- сложение матриц
 
@@ -82,27 +80,21 @@ add _+_ (cons M M₁) (cons N N₁) = cons (zipWith₂ _+_ M N) (add _+_ M₁ N�
 
 -- умножение матриц
 
-sum : {A : Set} (_+_ : A → A → A) → {n : ℕ} → Vec A (suc n) → A
-sum _+_ {zero} (cons x v) = x
-sum _+_ {suc n} (cons x v) = x + (sum _+_ v)
+sum : {A : Set} (_+_ : A → A → A) → (zro : A) → {n : ℕ} → Vec A n → A
+sum _+_ zro {zero} nil = zro
+sum _+_ zro {suc n} (cons x v) = x + (sum _+_ zro v)
 
 -- scalar(or dot) product
-scalar : {A : Set} {n : ℕ} → (_+_ _*_ : A → A → A) → Vec A (suc n) → Vec A (suc n) → A
-scalar _+_ _*_ x y = sum (_+_) (zipWith₂ (_*_) x y)
-
--- сначала стобцы, потом строки!
--- Mat ℕ 3 2
--- [1,2,3]
--- [4,5,6]
+scalar : {A : Set} {n : ℕ} → (_+_ _*_ : A → A → A) → (zro : A) → Vec A n → Vec A n → A
+scalar _+_ _*_ zro x y = sum (_+_) zro (zipWith₂ (_*_) x y)
 
 -- умножение матрицы на вектор
-_**_ : {A : Set} (_+_ _*_ : A → A → A) → {n m : ℕ} → Mat A (suc n) (suc m) → Vec A (suc m) → Vec A (suc n)
-_**_ _+_ _*_ m v = map₂ (λ r → scalar _+_ _*_ r v) m
+_**_ : {A : Set} (_+_ _*_ : A → A → A) → (zro : A) → {n m : ℕ} → Mat A n m → Vec A m → Vec A n
+_**_ _+_ _*_ z m v = map₂ (λ r → scalar _+_ _*_ z r v) m
 
-mul : {A : Set} (_+_ _*_ : A → A → A) → {n m k : ℕ} → Mat A (suc n) (suc m) → Mat A (suc m) (suc k) → Mat A (suc n) (suc k)
-mul _+_ _*_ x y = map₂ (λ r → _**_ _+_ _*_ yt r) x
-  where
-    yt = transpose y
+
+mul : {A : Set} (_+_ _*_ : A → A → A) → (zro : A) → {n m k : ℕ} → Mat A n m → Mat A m k → Mat A n k
+mul _+_ _*_ zro x y = map₂ (λ r → _**_ _+_ _*_ zro (transpose y) r) x
 
 -- 5. Определите при помощи индуктивных семейств тип CTree A n бинарных деревьев высоты ровно n с элементами во внутренних узлах.
 --    Любое такое бинарное дерево будет полным.
@@ -111,16 +103,34 @@ toℕ : {n : ℕ} → Fin n → ℕ
 toℕ zero = zero
 toℕ (suc x) = suc (toℕ x)
 
+fromℕ : (n : ℕ) → Fin (suc n)
+fromℕ zero    = zero
+fromℕ (suc n) = suc (fromℕ n)
+
 data CTree (A : Set) : ℕ → Set where
   leaf : A → CTree A 0
   branch : {n : ℕ} → A → CTree A n → CTree A n → CTree A (suc n)
 
 -- 6. Определите при помощи индуктивных семейств тип Tree A n бинарных деревьев высоты не больше n с элементами во внутренних узлах.
 
+-- data Tree (A : Set) : ℕ → Set where
+--   leaf : {k : Fin 2} → A → Tree A (toℕ k)
+--   branch : {n : ℕ} {k m : Fin n} → A → Tree A (toℕ k) → Tree A (toℕ m) → Tree A  (suc (toℕ m) ⊔ (toℕ k))
+--   branch : {n : ℕ} {k : Fin n} → A → Tree A (toℕ k) → Tree A (toℕ k) → Tree A (toℕ (suc k))
+
 data Tree (A : Set) : ℕ → Set where
-  
+  leaf : {n : ℕ} → A → Tree A n
+  branch : {n : ℕ} →  A → Tree A n → Tree A n → Tree A (suc n)
+
 -- определите функцию, возвращающую высоту дерева.
 
+max : {n : ℕ} → Fin n → Fin n → Fin n
+max zero zero = zero
+max zero (suc b) = suc b
+max (suc a) zero = suc a
+max (suc a) (suc b) = suc (max a b)
+
 height : {A : Set} (n : ℕ) → Tree A n → Fin (suc n)
-height zero t = {!   !}
-height (suc n) t = {!   !}
+height zero (leaf x) = zero
+height (suc n) (leaf x) = zero
+height (suc n) (branch x t t₁) = suc (max (height n t) (height n t₁))
