@@ -74,12 +74,21 @@ distr zero m k = refl
 distr (suc n) m k =
   begin
     m + k + n * (m + k)
-  ≡⟨ cong {!   !} {!   !} ⟩
+  ≡⟨ cong (λ x → m + k + x) (distr n m k) ⟩
     m + k + (n * m + n * k)
-  ≡⟨ {!   !} ⟩
+  ≡⟨ +-assoc m ⟩
+    m + (k + (n * m + n * k))
+  ≡⟨ cong (λ x → m + x) (sym (+-assoc k)) ⟩
+    m + ((k + n * m) + n * k)
+  ≡⟨ sym (+-assoc m) ⟩
+    (m + (k + n * m)) + n * k
+  ≡⟨ cong (λ x → m + x + n * k) (+-comm k (n * m)) ⟩
+    (m + (n * m + k)) + n * k
+  ≡⟨ cong (λ x → x + n * k) (sym (+-assoc m)) ⟩
+    ((m + n * m) + k) + n * k
+  ≡⟨ +-assoc (m + n * m) ⟩
     m + n * m + (k + n * k)
   ∎
-
 
 -- 5. Докажите следующее утверждение.
 
