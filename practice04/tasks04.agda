@@ -138,7 +138,11 @@ reverse-inv (x ∷ xs) =
 
 []-is-neutral : {A : Set} {n : ℕ} (xs : Vec A n) → subst (Vec A) (+-comm n 0) (xs +V+ []) ≡ xs
 []-is-neutral [] = refl
-[]-is-neutral (x ∷ xs) = ?  
+[]-is-neutral {A} {suc n} (x ∷ xs) = trans (lemma x {!   !} {!   !}) (cong (_∷_ x) ([]-is-neutral xs))
+  where
+    lemma : (x : A) {n m : ℕ} (p : n ≡ m) (xs : Vec A n) →
+      subst (Vec A) (cong suc p) (x ∷ xs) ≡ x ∷ subst (Vec A) p xs
+    lemma x₁ refl xs₁ = refl
 
 -- 8. Определите reverse для Vec через аккумулятор.
 
