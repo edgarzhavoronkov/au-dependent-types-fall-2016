@@ -9,6 +9,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Data.Product
 open import Data.Empty
+open import Data.Unit hiding (_≤_)
 
 -- 1. Реализуйте любой алгоритм сортировки, используя with для паттерн матчинга на результате сравнения элементов списка.
 -- if (x < y) then (cons y (insert x ys)) else (cons x (cons y ys))
@@ -102,6 +103,9 @@ data Result (A : Set) (xs : List A) : Set where
   repeated : (n : ℕ) (a : A) → xs ≡ repeat n a → Result A xs
   A-is-not-trivial : (a a' : A) → ¬ (a ≡ a') → Result A xs
 
+abs : {A : Set} → (a b c : A) → (a ≡ b) → (a ≡ c) → ¬ (b ≡ c) → ⊥
+abs a b c p q r = r (trans (sym p) q)
+
 lemma : {A : Set} (xs : List A) → DecEq A → Result A xs
 lemma [] P = empty refl
 lemma (x ∷ xs) P with lemma xs P
@@ -110,13 +114,29 @@ lemma (x₁ ∷ .(repeat n a)) P | repeated n a refl with P x₁ a
 lemma (x₁ ∷ .(repeat n a)) P | repeated n a refl | yes p = repeated (suc n) a (cong (λ x → x ∷ (repeat n a)) p)
 lemma (x₁ ∷ .(repeat n a)) P | repeated n a refl | no q = A-is-not-trivial x₁ a q
 lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x with P x₁ a | P x₁ a'
-lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x | yes p | yes p₁ = A-is-not-trivial a a' x
 lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x | yes p | no q = A-is-not-trivial x₁ a' q
 lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x | no q | yes p = A-is-not-trivial x₁ a q
 lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x | no q | no q₁ = A-is-not-trivial a a' x
+lemma (x₁ ∷ xs) P | A-is-not-trivial a a' x | yes p | yes p₁ with abs x₁ a a' p p₁ x
+... | ()
 
 -- 6. Определите view, представляющий число в виде частного и остатка от деления его на произвольное (неотрицательное) число m.
 --    Реализуйте функцию деления.
+
+data Less : ℕ → ℕ → Set where
+  lt : (m n : ℕ) → T (m < n) → Less m n
+  eq : (m n : ℕ) → m ≡ n → Less m n
+  gt : (m n : ℕ) → T (n < m) → Less m n
+
+
+lessity : (m n : ℕ) → Less m n
+lessity zero zero = eq zero zero refl
+lessity zero (suc n) = lt zero (suc n) tt
+lessity (suc m) zero = gt (suc m) zero tt
+lessity (suc m) (suc n) with lessity m n
+lessity (suc m) (suc n) | lt .m .n x = lt (suc m) (suc n) x
+lessity (suc m) (suc n) | eq .m .n x = eq (suc m) (suc n) (cong suc x)
+lessity (suc m) (suc n) | gt .m .n x = gt (suc m) (suc n) x
 
 data ModView (m : ℕ) : ℕ → Set where
   quot-rem : ∀ q r → T (r < m) → ModView m (r + q * m)
@@ -125,8 +145,28 @@ isPos : ℕ → Bool
 isPos 0 = false
 isPos _ = true
 
+lem₀ : (q m r : ℕ) → (r ≡ m) → (r + q * m) ≡ suc q * m
+lem₀ q m r p = subst (λ x → x + q * m ≡ suc q * m) (sym p) refl
+
+lem₁ : (r m : ℕ) → T (m < r) → T (r < suc m) → ⊥
+lem₁ zero m p q = p
+lem₁ (suc r) zero p q = q
+lem₁ (suc r) (suc m) p q = lem₁ r m p q
+
 mod-view : (m n : ℕ) → T (isPos m) → ModView m n
-mod-view = {! !}
+mod-view zero zero ()
+mod-view zero (suc n) ()
+mod-view (suc m) zero tt = quot-rem 0 0 tt
+mod-view (suc m) (suc n) tt with mod-view (suc m) n tt
+-- Надо посмотреть на  r + 1 < m + 1
+mod-view (suc m) (suc .(r + q * suc m)) tt | quot-rem q r x with lessity (suc r) (suc m)
+mod-view (suc m) (suc .(r + q * suc m)) tt | quot-rem q r x₁ | lt .(suc r) .(suc m) x = quot-rem q (suc r) x
+mod-view (suc m) (suc .(r + q * suc m)) tt | quot-rem q r x₁ | eq .(suc r) .(suc m) x = subst (ModView (suc m)) (sym (lem₀ q (suc m) (suc r) x)) (quot-rem (suc q) 0 tt)
+mod-view (suc m) (suc .(r + q * suc m)) tt | quot-rem q r x₁ | gt .(suc r) .(suc m) x with lem₁ r m x x₁
+mod-view (suc m) (suc .(r + q * suc m)) tt | quot-rem q r x₁ | gt .(suc r) .(suc m) x | ()
+
 
 div : ℕ → (m : ℕ) → T (isPos m) → ℕ
-div n m p = {! !}
+div n zero ()
+div n (suc m) tt with mod-view (suc m) n tt
+div .(r + q * suc m) (suc m) tt | quot-rem q r x = q
