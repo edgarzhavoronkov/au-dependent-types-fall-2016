@@ -125,10 +125,10 @@ data _<='_ : ℕ → ℕ → Set where
   s<='s : {n m : ℕ} → n <=' m → suc n <=' suc m
 
 <='-refl : ((n m : ℕ) → isProp (n <=' m)) → ⊥
-<='-refl p = lem (p {!   !})
+<='-refl p = lem (p zero zero z<='n <='refl)
     where
-        lem : _
-        lem = {!   !}
+        lem : z<='n ≡ <='refl → ⊥
+        lem ()
 
 -- 8. Докажите, что если тип A вкладывается в тип B и B является утверждением, то и A является утверждением.
 
@@ -149,7 +149,7 @@ eq _ (_ ∷ _) [] = ⊥
 eq _==_ (x ∷ xs) (y ∷ ys) = hProp.A (x == y) × eq _==_ xs ys
 
 eq-isProp : {A : Set} (_==_ : A → A → hProp) (xs ys : List A) → isProp (eq _==_ xs ys)
-eq-isProp = {!  !}
+eq-isProp _==_ xs ys x y = {!   !}
 
 eq-Prop : {A : Set} (_==_ : A → A → hProp) → List A → List A → hProp
 eq-Prop _==_ xs ys = record { A = eq _==_ xs ys ; prop = eq-isProp _==_ xs ys }
