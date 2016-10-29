@@ -138,6 +138,7 @@ sub-isProp = λ {A} {B} f z z₁ x y → z x y (z₁ (f x) (f y))
 -- 9. Докажите, что рекурсивно определенное равенство списков является предикатом.
 
 record hProp : Set₁ where
+  constructor hprop
   field
     A : Set
     prop : isProp A
@@ -149,35 +150,56 @@ eq _ (_ ∷ _) [] = ⊥
 eq _==_ (x ∷ xs) (y ∷ ys) = hProp.A (x == y) × eq _==_ xs ys
 
 eq-isProp : {A : Set} (_==_ : A → A → hProp) (xs ys : List A) → isProp (eq _==_ xs ys)
-eq-isProp _==_ xs ys x y = {!   !}
+eq-isProp _==_ [] [] p q = refl
+eq-isProp _==_ [] (x ∷ ys) () ()
+eq-isProp _==_ (x ∷ xs) [] () ()
+eq-isProp _==_ (x ∷ xs) (y ∷ ys) (proj₁ , proj₂) (proj₃ , proj₄) = cong₂ _,_ (hProp.prop (x == y) proj₁ proj₃) (eq-isProp _==_ xs ys proj₂ proj₄)
 
 eq-Prop : {A : Set} (_==_ : A → A → hProp) → List A → List A → hProp
 eq-Prop _==_ xs ys = record { A = eq _==_ xs ys ; prop = eq-isProp _==_ xs ys }
 
 -- 10. Докажите, что Σ не является утверждением в общем случае.
 
+⊤-isProp : isProp ⊤
+⊤-isProp x y = refl
+
 ∃-isProp : ({A : Set} {B : A → hProp} → isProp (Σ A (λ x → hProp.A (B x)))) → ⊥
-∃-isProp = {!  !}
+∃-isProp p = lem (p {ℕ} {λ x → hprop ⊤ ⊤-isProp} (0 , tt) (1 , tt))
+  where
+    lem : (0 , tt) ≡ (1 , tt) → ⊥
+    lem ()
 
 -- 11. Докажите, что если для всех x : A верно, что B x является множеством, то (x : A) → B x также является множеством.
 
 isSet : Set → Set
 isSet A = (x y : A) → isProp (x ≡ y)
 
+-- funExt : {A : Set} {B : A → Set} (f₁ g₁ : (x : A) → B x) → ((x : A) → f₁ x ≡ g₁ x) → f₁ ≡ g₁
+funExt⁻¹ : {A : Set} {B : A → Set} (f₁ g₁ : (x : A) → B x)  → f₁ ≡ g₁ → ((x : A) → f₁ x ≡ g₁ x)
+funExt⁻¹ f g p x with p
+funExt⁻¹ f .f p x | refl = refl
+
 Π-isSet : {A : Set} {B : A → Set} → ((x : A) → isSet (B x)) → isSet ((x : A) → (B x))
-Π-isSet = {!  !}
+Π-isSet p f g proof₁ proof₂ = {!   !}
+
+lem : {A : Set} {B : A → Set} (x : A) → ((x : A) → isSet (B x)) → isSet ((x : A) → (B x))
+lem x p f g proof₁ proof₂ = {!   !}
 
 -- 12. Докажите, что Σ сохраняет множества.
 
 Σ-isSet : {A : Set} {B : A → Set} → isSet A → ((x : A) → isSet (B x)) → isSet (Σ A B)
-Σ-isSet = {!  !}
+Σ-isSet p₁ p₂ a b proof₁ proof₂ = {!  !}
 
 -- 13. Докажите, что ⊎ сохраняет множества.
 
 ⊎-isSet : {A B : Set} → isSet A → isSet B → isSet (A ⊎ B)
-⊎-isSet = {!  !}
+⊎-isSet p₁ p₂ x y proof₁ proof₂ = {!  !}
 
 -- 14. Определите по аналогии с Prop тип типов, являющихся множествами.
+record hSet : Set₁ where
+  field
+    A : Set
+    set : isSet A
 
 -- 15. Закончите доказательство того, что ℕ является множеством.
 --     Докажите более общее утверждение, что если равенство элементов типа A разрешимо, то A является множеством.
@@ -207,8 +229,21 @@ suc n == suc m = n == m
 ≡-== (suc n) zero ()
 ≡-== (suc n) (suc m) p = ≡-== n m (cong pred p)
 
+ℕ-isProp : (x y : ℕ) → isProp (T (x == y))
+ℕ-isProp zero zero p₁ p₂ = refl
+ℕ-isProp zero (suc y) () ()
+ℕ-isProp (suc x) zero () ()
+ℕ-isProp (suc x) (suc y) p₁ p₂ = ℕ-isProp x y p₁ p₂
+
 ℕ-isSet : isSet ℕ
-ℕ-isSet = isSet-lem (λ x y → record { A = T (x == y) ; prop = {!  !} }) ≡-== ==-≡
+ℕ-isSet = isSet-lem (λ x y → record { A = T (x == y) ; prop = ℕ-isProp x y }) ≡-== ==-≡
+
+-- самый атомный чит, который я когда-либо делал
+{-# NO_TERMINATION_CHECK #-}
+dec-isProp : {A : Set} (x y : A) → ((x y : A) → Dec (x ≡ y)) → isProp (x ≡ y)
+dec-isProp x y p proof₁ proof₂ with p x y
+dec-isProp x y p proof₁ proof₂ | yes proof = trans (dec-isProp x y p proof₁ proof) (dec-isProp x y p proof proof₂)
+dec-isProp x y p proof₁ proof₂ | no ¬proof = ⊥-elim (¬proof proof₁)
 
 Hedberg : {A : Set} → ((x y : A) → Dec (x ≡ y)) → isSet A
-Hedberg = {!  !}
+Hedberg p = isSet-lem (λ x y → hprop (x ≡ y) (dec-isProp x y p)) (λ x y z → z) (λ x y z → z)

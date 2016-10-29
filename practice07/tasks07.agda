@@ -1,8 +1,10 @@
+{-# OPTIONS --copatterns #-}
 module tasks07 where
 
 open import Data.Nat hiding (_≤_)
 open import Data.List hiding (filter)
 open import Data.Unit hiding (_≤_)
+open import Data.Empty
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
@@ -83,12 +85,21 @@ data _∈_ {A : Set} (a : A) : List A → Set where
 -- 5. Определите индуктивно предикат xs ⊆ ys, означающий "список xs является подсписком ys".
 
 data _⊆_ {A : Set} : List A → List A → Set where
-    []⊆xs : {xs : List A} → [] ⊆ xs
-    -- TODO
-    ∷-⊆ : {x y : A} → {xs ys : List A} →
+  ⊆-refl : (xs : List A) → xs ⊆ xs
+  ∷⊆∷ : {x : A} {xs ys : List A} → xs ⊆ ys → (x ∷ xs) ⊆ (x ∷ ys)
+  ⊆-step : {x : A} {xs ys : List A} → xs ⊆ ys → xs ⊆ (x ∷ ys)
 
+-- 6. Докажите, что filter' xs ⊆ xs для любого списка xs.
 
--- 6. Докажите, что filter xs ⊆ xs для любого списка xs.
+filter' : {A : Set} → (A → Bool) → List A → List A
+filter' p [] = []
+filter' p (x ∷ xs) = if p x then x ∷ (filter' p xs) else (filter' p xs)
+
+filter'-⊆ : {A : Set} → (p : A → Bool) → (xs : List A) → (filter' p xs) ⊆ xs
+filter'-⊆ p [] = ⊆-refl []
+filter'-⊆ p (x ∷ xs) with p x
+filter'-⊆ p (x ∷ xs) | true = ∷⊆∷ (filter'-⊆ p xs)
+filter'-⊆ p (x ∷ xs) | false = ⊆-step (filter'-⊆ p xs)
 
 -- 7*. Докажите следующее утверждение.
 
@@ -96,13 +107,35 @@ data div-dom (n k : ℕ) : Set where
   lt : n < k → div-dom n k
   geq : ¬ (n < k) → div-dom (n ∸ k) k → div-dom n k
 
+data Less : ℕ → ℕ → Set where
+  lt : (m n : ℕ) → m < n → Less m n
+  eq : (m n : ℕ) → m ≡ n → Less m n
+  gt : (m n : ℕ) → n < m → Less m n
+
+lessity : (m n : ℕ) → Less m n
+lessity zero zero = eq zero zero refl
+lessity zero (suc n) = lt zero (suc n) (s≤s z≤n)
+lessity (suc m) zero = gt (suc m) zero (s≤s z≤n)
+lessity (suc m) (suc n) with lessity m n
+lessity (suc m) (suc n) | lt .m .n x = lt (suc m) (suc n) (s≤s x)
+lessity (suc m) (suc n) | eq .m .n x = eq (suc m) (suc n) (cong suc x)
+lessity (suc m) (suc n) | gt .m .n x = gt (suc m) (suc n) (s≤s x)
+
 pos-div-dom : (n k : ℕ) → ¬ (k ≡ 0) → div-dom n k
-pos-div-dom = {! !}
+pos-div-dom _ zero x = ⊥-elim (x refl)
+pos-div-dom zero (suc k) p = lt (s≤s z≤n)
+pos-div-dom (suc n) (suc k) p with pos-div-dom n (suc k) p
+pos-div-dom (suc n) (suc k) p | lt x with lessity n k
+pos-div-dom (suc n) (suc k) p | lt x₁ | lt .n .k x = lt (s≤s x)
+pos-div-dom (suc n) (suc k) p | lt x₁ | eq .n .k x = geq {!   !} {!   !}
+pos-div-dom (suc n) (suc k) p | lt x₁ | gt .n .k x = ⊥-elim {!   !}
+pos-div-dom (suc n) (suc k) p | geq x res = geq {!   !} {!   !}
 
 -- 8*. Докажите следующий принцип индукции.
 
 ℕ-<-ind : (P : ℕ → Set) → ((n : ℕ) → ((k : ℕ) → k < n → P k) → P n) → (n : ℕ) → P n
-ℕ-<-ind P h n = {!  !}
+ℕ-<-ind P h zero = h zero (λ k → λ ())
+ℕ-<-ind P h (suc n) = {!   !}
 
 -- 9**. Докажите, что алгоритм сортировки, определенный ниже, корректен.
 --      Возможно, вам понадобится добавить некоторые предположения о _≤_.
@@ -155,3 +188,17 @@ module Sort (A : Set) (_≤_ : A → A → Bool) where
 
 -- 10. Определите тип бинарных сортированных деревьев.
 --    То есть таких деревьев, в которых для любого узла верно, что все элементы в левом поддереве меньше либо равны, чем значение в узле, которое меньше либо равно, чем все элементы в правом поддереве.
+
+module SortedTree' (A : Set) (_≤_ : A → A → Set) where
+  mutual
+    data SortedTree : Set where
+      leaf : A → SortedTree
+      branch : (x : A) (left : SortedTree) (right : SortedTree) → lessLeft x left → greatRight x right → SortedTree
+
+    lessLeft : A → SortedTree → Set
+    lessLeft x (leaf y) = y ≤ x
+    lessLeft x (branch y l r p q) = y ≤ x
+
+    greatRight : A → SortedTree → Set
+    greatRight x (leaf y) = x ≤ y
+    greatRight x (branch y l r p q) = x ≤ y
