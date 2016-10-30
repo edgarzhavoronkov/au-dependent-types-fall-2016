@@ -174,16 +174,19 @@ eq-Prop _==_ xs ys = record { A = eq _==_ xs ys ; prop = eq-isProp _==_ xs ys }
 isSet : Set → Set
 isSet A = (x y : A) → isProp (x ≡ y)
 
+isSet-lem : {A : Set} (R : A → A → hProp) →
+  ((x y : A) → x ≡ y → hProp.A (R x y)) →
+  ((x y : A) → hProp.A (R x y) → x ≡ y) →
+  isSet A
+isSet-lem = {!  !}
+
 -- funExt : {A : Set} {B : A → Set} (f₁ g₁ : (x : A) → B x) → ((x : A) → f₁ x ≡ g₁ x) → f₁ ≡ g₁
 funExt⁻¹ : {A : Set} {B : A → Set} (f₁ g₁ : (x : A) → B x)  → f₁ ≡ g₁ → ((x : A) → f₁ x ≡ g₁ x)
 funExt⁻¹ f g p x with p
 funExt⁻¹ f .f p x | refl = refl
 
 Π-isSet : {A : Set} {B : A → Set} → ((x : A) → isSet (B x)) → isSet ((x : A) → (B x))
-Π-isSet p f g proof₁ proof₂ = {!   !}
-
-lem : {A : Set} {B : A → Set} (x : A) → ((x : A) → isSet (B x)) → isSet ((x : A) → (B x))
-lem x p f g proof₁ proof₂ = {!   !}
+Π-isSet {A} {B} p = isSet-lem (λ x y → hprop ((x₁ : A) → B x₁) (λ f g → funExt f g (λ x₁ → {!   !}))) (λ x y _ → y) (λ f g x → funExt f g {! p  !})
 
 -- 12. Докажите, что Σ сохраняет множества.
 
@@ -205,11 +208,6 @@ record hSet : Set₁ where
 --     Докажите более общее утверждение, что если равенство элементов типа A разрешимо, то A является множеством.
 --     Для доказательства используйте лемму, приведенную ниже (саму лемму доказывать не нужно).
 
-isSet-lem : {A : Set} (R : A → A → hProp) →
-  ((x y : A) → x ≡ y → hProp.A (R x y)) →
-  ((x y : A) → hProp.A (R x y) → x ≡ y) →
-  isSet A
-isSet-lem = {!  !}
 
 _==_ : ℕ → ℕ → Bool
 0 == 0 = true
