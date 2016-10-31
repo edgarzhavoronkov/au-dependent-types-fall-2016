@@ -191,12 +191,44 @@ funExt⁻¹ f .f p x | refl = refl
 -- 12. Докажите, что Σ сохраняет множества.
 
 Σ-isSet : {A : Set} {B : A → Set} → isSet A → ((x : A) → isSet (B x)) → isSet (Σ A B)
-Σ-isSet p₁ p₂ a b proof₁ proof₂ = {!  !}
+Σ-isSet As p₂ a b proof₁ proof₂ = {!  !}
 
--- 13. Докажите, что ⊎ сохраняет множества.
+-- 13. Докажите, что ⊎ сохраняет множества. Без леммы и с ней
+
+un-inj₁ : {A B : Set} → A → A ⊎ B → A
+un-inj₁ _ (inj₁ a) = a
+un-inj₁ a (inj₂ _) = a
+
+un-inj₂ : {A B : Set} → B → A ⊎ B → B
+un-inj₂ b (inj₁ _) = b
+un-inj₂ _ (inj₂ b) = b
+
+R-⊎ : {A B : Set} → A ⊎ B → A ⊎ B → Set
+R-⊎ (inj₁ x) (inj₁ y) = x ≡ y
+R-⊎ (inj₁ x) (inj₂ y) = ⊥
+R-⊎ (inj₂ x) (inj₁ y) = ⊥
+R-⊎ (inj₂ x) (inj₂ y) = x ≡ y
+
+R-⊎-isProp : {A B : Set} → isSet A → isSet B → (x y : A ⊎ B) → isProp (R-⊎ x y)
+R-⊎-isProp As Bs (inj₁ x) (inj₁ y) = As x y
+R-⊎-isProp As Bs (inj₁ x) (inj₂ y) = λ x₁ → λ ()
+R-⊎-isProp As Bs (inj₂ x) (inj₁ y) = λ x₁ → λ ()
+R-⊎-isProp As Bs (inj₂ x) (inj₂ y) = Bs x y
+
+≡-R-⊎ : {A B : Set} → (x y : A ⊎ B) → x ≡ y → R-⊎ x y
+≡-R-⊎ (inj₁ x) (inj₁ y) p = cong (un-inj₁ x) p
+≡-R-⊎ (inj₁ x) (inj₂ y) ()
+≡-R-⊎ (inj₂ x) (inj₁ y) ()
+≡-R-⊎ (inj₂ x) (inj₂ y) p = cong (un-inj₂ x) p
+
+R-⊎-≡ : {A B : Set} → (x y : A ⊎ B) → R-⊎ x y → x ≡ y
+R-⊎-≡ (inj₁ x) (inj₁ y) p = cong inj₁ p
+R-⊎-≡ (inj₁ x) (inj₂ y) ()
+R-⊎-≡ (inj₂ x) (inj₁ y) ()
+R-⊎-≡ (inj₂ x) (inj₂ y) p = cong inj₂ p
 
 ⊎-isSet : {A B : Set} → isSet A → isSet B → isSet (A ⊎ B)
-⊎-isSet p₁ p₂ x y proof₁ proof₂ = {!  !}
+⊎-isSet {A} {B} As Bs = isSet-lem (λ x y → hprop (R-⊎ x y) (R-⊎-isProp As Bs x y)) ≡-R-⊎ R-⊎-≡
 
 -- 14. Определите по аналогии с Prop тип типов, являющихся множествами.
 record hSet : Set₁ where
@@ -207,7 +239,6 @@ record hSet : Set₁ where
 -- 15. Закончите доказательство того, что ℕ является множеством.
 --     Докажите более общее утверждение, что если равенство элементов типа A разрешимо, то A является множеством.
 --     Для доказательства используйте лемму, приведенную ниже (саму лемму доказывать не нужно).
-
 
 _==_ : ℕ → ℕ → Bool
 0 == 0 = true
