@@ -64,12 +64,6 @@ suc-is-not-sur p = absurd {1} (∃-elim (λ x → λ ()) (λ a → λ ()) (p 0))
 _∘_ : {A B C : Set} → (B → C) → (A → B) → A → C
 g ∘ f = λ x → g (f x)
 
--- ∥_∥ : Set → Set
--- ∣_∣ : {A : Set} → A → ∥ A ∥
--- trunc : {A : Set} → isProp (∥ A ∥)
--- Trunc-rec : {A B : Set} → isProp B → (A → B) → ∥ A ∥ → B
--- ∃-elim : {A : Set} {B : A → Set} {C : Set} → isProp C → ((a : A) → B a → C) → ∃ A B → C
-
 ∘-sur : {A B C : Set} (f : A → B) (g : B → C) → isSur f → isSur g → isSur (g ∘ f)
 ∘-sur f g Fs Gs = λ c → ∃-elim trunc (λ b x → ∃-elim trunc (λ a x₁ → ∣ a , (subst (λ x₂ → (g x₂) ≡ c) (sym x₁) x) ∣) (Fs b)) (Gs c)
 
@@ -85,10 +79,10 @@ isBij : {A B : Set} → (A → B) → Set
 isBij {A} {B} f = Σ[ g ∶ (B → A) ] (((x : A) → g (f x) ≡ x) × ((y : B) → f (g y) ≡ y))
 
 isBij-isInj : {A B : Set} (f : A → B) → isBij f → isInj f
-isBij-isInj f Fb = λ x y x₁ → {!   !}
+isBij-isInj f (g , proj₁ , proj₂) = λ x₁ x₂ p → trans (sym (proj₁ x₁)) (trans (cong g p) (proj₁ x₂))
 
 isBij-isSur : {A B : Set} (f : A → B) → isBij f → isSur f
-isBij-isSur = {! !}
+isBij-isSur f (g , proj₁ , proj₂) = λ y → ∣ g y  , proj₂ y ∣
 
 isSet : Set → Set
 isSet A = (x y : A) → isProp (x ≡ y)
@@ -97,15 +91,34 @@ isSet A = (x y : A) → isProp (x ≡ y)
 sigmaExt : {A : Set} {B : A → Set} {a a' : A} {b : B a} {b' : B a'} (p : a ≡ a') → subst B p b ≡ b' → _≡_ {A = Σ A B} (a , b) (a' , b')
 sigmaExt refl q = cong (_,_ _) q
 
+
 isInj-isSur-isBij : {A B : Set} → isSet B → (f : A → B) → isInj f → isSur f → isBij f
-isInj-isSur-isBij Bs f fi fs =
+isInj-isSur-isBij {A} Bs f fi fs =
   (λ b → proj₁ (isInj-isSur-isBij' Bs f fi fs b)) ,
-  (λ a → {!   !}) ,
+  (λ a → lemma a) ,
   (λ b → proj₂ (isInj-isSur-isBij' Bs f fi fs b))
   where
-    isInj-isSur-isBij' : {A B : Set} → isSet B → (f : A → B) → isInj f → isSur f →
-      (y : B) → Σ[ x ∶ A ] (f x ≡ y)
-    isInj-isSur-isBij' Bs f fi fs b = {! !}
+    isInj-isSur-isBij' : {A B : Set} → isSet B → (f : A → B) → isInj f → isSur f → (y : B) → Σ[ x ∶ A ] (f x ≡ y)
+    isInj-isSur-isBij' {A} {B} Bs f fi fs y = proj₁ (Trunc-rec Σ-isProp (λ z → z) (fs y)) , proj₂ (Trunc-rec Σ-isProp (λ z → z) (fs y))
+        where
+            Σ-isProp : isProp (Σ[ x ∶ A ] (f x ≡ y))
+            Σ-isProp (proj₁ , proj₂) (proj₃ , proj₄) with fi proj₁ proj₃ (trans proj₂ (sym proj₄))
+            Σ-isProp (proj₁ , proj₂) (.proj₁ , proj₄) | refl with Bs (f proj₁) y proj₂ proj₄
+            Σ-isProp (proj₁ , proj₂) (.proj₁ , .proj₂) | refl | refl = refl
+
+    lemma : (a : A) → proj₁ (isInj-isSur-isBij' Bs f fi fs (f a)) ≡ a
+    lemma a with isInj-isSur-isBij' Bs f fi fs (f a)
+    lemma a | proj₁ , proj₂ = fi proj₁ a proj₂
+
+
+-- isSur {A} {B} f = (y : B) → ∃[ x ∶ A ] (f x ≡ y)
+-- isSet A = (x y : A) → isProp (x ≡ y)
+-- isInj {A} f = (x y : A) → f x ≡ f y → x ≡ y
+-- ∥_∥ : Set → Set
+-- ∣_∣ : {A : Set} → A → ∥ A ∥
+-- trunc : {A : Set} → isProp (∥ A ∥)
+-- Trunc-rec : {A B : Set} → isProp B → (A → B) → ∥ A ∥ → B
+-- ∃-elim : {A : Set} {B : A → Set} {C : Set} → isProp C → ((a : A) → B a → C) → ∃ A B → C
 
 -- 7. Докажите, что isBij является утверждением.
 
