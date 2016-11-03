@@ -12,6 +12,9 @@ open import Trunc
 
 -- 1. Докажите следующие правила, характеризующие квантор существования.
 
+postulate
+  funExt : {A : Set} {B : A → Set} (f g : (x : A) → B x) → ((x : A) → f x ≡ g x) → f ≡ g
+
 ∃ : (A : Set) (B : A → Set) → Set
 ∃ A B = ∥ Σ A B ∥
 
@@ -102,9 +105,7 @@ isInj-isSur-isBij {A} Bs f fi fs =
     isInj-isSur-isBij' {A} {B} Bs f fi fs y = proj₁ (Trunc-rec Σ-isProp (λ z → z) (fs y)) , proj₂ (Trunc-rec Σ-isProp (λ z → z) (fs y))
         where
             Σ-isProp : isProp (Σ[ x ∶ A ] (f x ≡ y))
-            Σ-isProp (proj₁ , proj₂) (proj₃ , proj₄) with fi proj₁ proj₃ (trans proj₂ (sym proj₄))
-            Σ-isProp (proj₁ , proj₂) (.proj₁ , proj₄) | refl with Bs (f proj₁) y proj₂ proj₄
-            Σ-isProp (proj₁ , proj₂) (.proj₁ , .proj₂) | refl | refl = refl
+            Σ-isProp (proj₁ , proj₂) (proj₃ , proj₄) = sigmaExt (fi proj₁ proj₃ (trans proj₂ (sym proj₄))) (Bs (f proj₃) y (subst (λ z → f z ≡ y) (fi proj₁ proj₃ (trans proj₂ (sym proj₄))) proj₂) proj₄)
 
     lemma : (a : A) → proj₁ (isInj-isSur-isBij' Bs f fi fs (f a)) ≡ a
     lemma a with isInj-isSur-isBij' Bs f fi fs (f a)
@@ -123,6 +124,13 @@ isInj-isSur-isBij {A} Bs f fi fs =
 -- 7. Докажите, что isBij является утверждением.
 
 isBij-isProp : {A B : Set} → isSet A → isSet B → (f : A → B) → isProp (isBij f)
-isBij-isProp As Bs f = {!   !}
+isBij-isProp {A} {B} As Bs f (inv₁ , proof₁ , proof₂) (inv₂ , proof₃ , proof₄) = sigmaExt (funExt inv₁ inv₂ (λ b → trans (sym (cong inv₁ (proof₄ b))) (proof₁ (inv₂ b)))) (lemma (proof₃ , proof₄))
+    where
+        lemma : (p : ((x : A) → inv₂ (f x) ≡ x) × ((y : B) → f (inv₂ y) ≡ y)) →
+                subst (λ g → ((x : A) → g (f x) ≡ x) × ((y : B) → f (g y) ≡ y))
+                 (funExt inv₁ inv₂ (λ b → trans (sym (cong inv₁ (proof₄ b)))
+                  (proof₁ (inv₂ b)))) (proof₁ , proof₂) ≡ (proof₃ , proof₄)
+        lemma p with subst (λ g → ((x : A) → g (f x) ≡ x) × ((y : B) → f (g y) ≡ y)) (funExt inv₁ inv₂ (λ b → trans (sym (cong inv₁ (proof₄ b))) (proof₁ (inv₂ b)))) (proof₁ , proof₂)
+        lemma (pr₃ , pr₄) | pr₁ , pr₂ = sigmaExt (funExt pr₁ proof₃ (λ x → As (inv₂ (f x)) x (pr₁ x) (proof₃ x))) (funExt (subst (λ _ → (x : B) → f (inv₂ x) ≡ x) (funExt pr₁ proof₃ (λ x → As (inv₂ (f x)) x (pr₁ x) (proof₃ x))) pr₂) proof₄ (λ x → Bs (f (inv₂ x)) x (subst (λ _ → (x₁ : B) → f (inv₂ x₁) ≡ x₁) (funExt pr₁ proof₃ (λ x₁ → As (inv₂ (f x₁)) x₁ (pr₁ x₁) (proof₃ x₁))) pr₂ x) (proof₄ x)))
 
 -- 8. См. Cantor.agda.

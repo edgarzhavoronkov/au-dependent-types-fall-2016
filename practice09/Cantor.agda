@@ -50,7 +50,7 @@ Cantor₂ = (A : Set) (f : A → Subs A) → isSur f → ⊥
 -- Докажите теорему Кантора.
 
 cantor₁ : Cantor₁
-cantor₁ = {!!}
+cantor₁ A Sa = {!   !} , {!   !}
 
 cantor₂ : Cantor₂
-cantor₂ = {!!}
+cantor₂ A f Fs = {! !}
