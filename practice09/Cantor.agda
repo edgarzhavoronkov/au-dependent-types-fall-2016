@@ -33,7 +33,6 @@ isSet : ∀ {i} → Set i → Set i
 isSet A = (x y : A) → isProp (x ≡ y)
 
 
-
 -- Теорема Кантора говорит, что для любого множества A мощность множества его подмножеств строго больше, чем мощность A.
 
 -- Множество подмножеств можно определить следующим образом:
@@ -49,8 +48,22 @@ Cantor₂ = (A : Set) (f : A → Subs A) → isSur f → ⊥
 
 -- Докажите теорему Кантора.
 
+coe : {A B : Set} → A ≡ B → A → B
+coe refl x = x
+
 cantor₁ : Cantor₁
-cantor₁ A Sa = {!   !} , {!   !}
+cantor₁ A Sa = f , pr
+    where
+        f : A → A → hProp
+        f x y = prop (x ≡ y) (Sa x y)
+
+        pr : isInj f
+        pr x y p =
+            let t = cong (λ f → f x) p
+                t' = cong hProp.A t
+            in sym (coe t' refl)
 
 cantor₂ : Cantor₂
-cantor₂ A f Fs = {! !}
+cantor₂ A f f-sur =
+    let t = f-sur (λ x → prop (hProp.A (f x x) → ⊥) (λ x₁ y → {!   !}))
+    in Trunc-rec (λ x → λ ()) (λ x → {!   !}) t
