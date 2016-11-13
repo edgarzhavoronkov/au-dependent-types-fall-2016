@@ -118,15 +118,20 @@ to : Bool₁ → Bool ≡ Bool
 to true₁ = SetExt ((λ x → x) , (λ x → x) , (λ x → refl) , (λ x → refl))
 to false₁ = SetExt (not , not , not-not , not-not)
 
+
 aut-Bool : (Bool ≡ Bool) ≡ Bool₁
 aut-Bool = SetExt (from , to , to-from , from-to)
     where
         to-from : (x : Bool ≡ Bool) → to (from x) ≡ x
-        to-from x with to (from x)
-        ... | res = {!   !}
+        to-from x = {!   !}
 
         from-to : (x : Bool₁) → from (to x) ≡ x
-        from-to true₁ = {!   !}
+        from-to true₁ =
+          let
+            t = ≡-fun (SetExt {A = Bool} {B = Bool} ((λ x → x) , (λ x → x) , (λ x → refl) , (λ x → refl)))
+            t' = funExt t (λ x → x) (λ x → {!   !})
+          in {!   !}
+
         from-to false₁ = {!   !}
 
 -- 7. Докажите, что группа автоморфизмов в общем случае не коммутативна.
@@ -134,8 +139,71 @@ aut-Bool = SetExt (from , to , to-from , from-to)
 _**'_ : ∀ {l} {A : Set l} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 p **' refl = p
 
+data Three : Set where
+  one : Three
+  two : Three
+  three : Three
+
+p : Three → Three
+p one = two
+p two = three
+p three = one
+
+p-inv : Three → Three
+p-inv one = three
+p-inv two = one
+p-inv three = two
+
+q : Three → Three
+q one = one
+q two = three
+q three = two
+
+q-inv : Three → Three
+q-inv one = one
+q-inv two = three
+q-inv three = two
+
+p-pinv : (t : Three) → p (p-inv t) ≡ t
+p-pinv one = refl
+p-pinv two = refl
+p-pinv three = refl
+
+pinv-p : (t : Three) → p-inv (p t) ≡ t
+pinv-p one = refl
+pinv-p two = refl
+pinv-p three = refl
+
+q-qinv : (t : Three) → q (q-inv t) ≡ t
+q-qinv one = refl
+q-qinv two = refl
+q-qinv three = refl
+
+qinv-q : (t : Three) → q-inv (q t) ≡ t
+qinv-q one = refl
+qinv-q two = refl
+qinv-q three = refl
+
+p-Bij : Bij Three Three
+p-Bij = p , p-inv , pinv-p , p-pinv
+
+q-Bij : Bij Three Three
+q-Bij = q , q-inv , qinv-q , q-qinv
+
+p-eq : Three ≡ Three
+p-eq = SetExt p-Bij
+
+q-eq : Three ≡ Three
+q-eq = SetExt q-Bij
+
+confuse : (p-eq **' q-eq ≡ q-eq **' p-eq → ((x : Three) → p (q x) ≡ q (p x))) → ⊥
+confuse p = {!   !}
+
 aut-is-not-comm : ((A : Set) (p q : A ≡ A) → p **' q ≡ q **' p) → ⊥
-aut-is-not-comm = {!  !}
+aut-is-not-comm p =
+  let
+    t = p Three p-eq q-eq
+  in {!   !}
 
 -- 8. Докажите, что isProp является предикатом.
 
