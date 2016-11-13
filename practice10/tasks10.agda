@@ -196,14 +196,25 @@ p-eq = SetExt p-Bij
 q-eq : Three ≡ Three
 q-eq = SetExt q-Bij
 
-confuse : (p-eq **' q-eq ≡ q-eq **' p-eq → ((x : Three) → p (q x) ≡ q (p x))) → ⊥
-confuse p = {!   !}
+confuse : (p-eq **' q-eq ≡ q-eq **' p-eq) → ((x : Three) → p (q x) ≡ q (p x) → ⊥)
+confuse p x ()
+
+D : Three → Set
+D one = ⊤
+D two = ⊤
+D three = ⊥
+
+wtf : two ≡ three → ⊥
+wtf ()
 
 aut-is-not-comm : ((A : Set) (p q : A ≡ A) → p **' q ≡ q **' p) → ⊥
-aut-is-not-comm p =
-  let
-    t = p Three p-eq q-eq
-  in {!   !}
+aut-is-not-comm p with confuse (p Three p-eq q-eq) one
+... | res = {!   !}
+
+  -- let
+  --   t = p Three p-eq q-eq
+  --   t' = confuse t one
+  -- in {!   !}
 
 -- 8. Докажите, что isProp является предикатом.
 
