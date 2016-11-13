@@ -5,6 +5,7 @@ module tasks10 where
 open import Data.Nat
 open import Data.Sum
 open import Data.Product
+open import Data.Unit
 open import Data.Empty
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality
@@ -13,12 +14,14 @@ open import lect10
 
 -- 1. Докажите, что (n + m)-элементное множество равно размеченному объединению n- и m-элементного.
 
+helper : (n m : ℕ) → Fin n ⊎ Fin m → Fin (suc n) ⊎ Fin m
+helper n m (inj₁ x) = inj₁ (suc x)
+helper n m (inj₂ y) = inj₂ y
+
 f : (n m : ℕ) → Fin (n + m) → Fin n ⊎ Fin m
 f zero m x = inj₂ x
 f (suc n) m zero = inj₁ zero
-f (suc n) m (suc x) with f n m x
-f (suc n) m (suc x₁) | inj₁ x = inj₁ (suc x)
-f (suc n) m (suc x) | inj₂ y = inj₂ y
+f (suc n) m (suc x) = helper n m (f n m x)
 
 g : (n m : ℕ) → Fin n ⊎ Fin m → Fin (n + m)
 g n m (inj₁ x) = inject+ m x
@@ -30,8 +33,9 @@ Fin-sum n m = SetExt (f n m , g n m , proof₁ n m , proof₂ n m)
         proof₁ : (n m : ℕ) → (x : Fin (n + m)) → g n m (f n m x) ≡ x
         proof₁ zero m x = refl
         proof₁ (suc n) m zero = refl
-        proof₁ (suc n) m (suc x) with {!   !}
-        proof₁ (suc n) m (suc x) | res = {!   !}
+        proof₁ (suc n) m (suc x) with f n m x
+        proof₁ (suc n₁) m₁ (suc x₁) | inj₁ x = cong suc {!   !}
+        proof₁ (suc n₁) m₁ (suc x) | inj₂ y = cong suc {!   !}
 
         proof₂ : (n m : ℕ) → (y : Fin n ⊎ Fin m) → f n m (g n m y) ≡ y
         proof₂ n m (inj₁ x) = {!   !}
@@ -60,7 +64,10 @@ K : ∀ {l} → Set l → Set l
 K A = (a : A) (p : a ≡ a) → p ≡ refl
 
 K-is-false : K Set → ⊥
-K-is-false k = {! !}
+K-is-false k =
+    let
+        t = k Bool (SetExt (not , not , not-not , not-not))
+    in subst ({!   !}) t tt
 
 -- 4. Докажите, что inv является обратным к **.
 
@@ -100,26 +107,27 @@ aut Ga a = record
 -- 6. Докажите, что множество автоморфизмов 2-х элементного множества состоит из двух элементов.
 
 data Bool₁ : Set₁ where
-  true false : Bool₁
+  true₁ false₁ : Bool₁
 
 from : (Bool ≡ Bool) → Bool₁
-from p = if (≡-fun p true) then true else false
+from p with ≡-fun p true
+from p | true = true₁
+from p | false = false₁
 
 to : Bool₁ → Bool ≡ Bool
-to true = refl
-to false = SetExt (not , (not , (not-not , not-not)))
+to true₁ = SetExt ((λ x → x) , (λ x → x) , (λ x → refl) , (λ x → refl))
+to false₁ = SetExt (not , not , not-not , not-not)
 
 aut-Bool : (Bool ≡ Bool) ≡ Bool₁
 aut-Bool = SetExt (from , to , to-from , from-to)
     where
         to-from : (x : Bool ≡ Bool) → to (from x) ≡ x
-        to-from x with from x
-        to-from x | true =  {!  !}
-        to-from x | false = {!   !}
+        to-from x with to (from x)
+        ... | res = {!   !}
 
         from-to : (x : Bool₁) → from (to x) ≡ x
-        from-to true = refl
-        from-to false = {!   !}
+        from-to true₁ = {!   !}
+        from-to false₁ = {!   !}
 
 -- 7. Докажите, что группа автоморфизмов в общем случае не коммутативна.
 
