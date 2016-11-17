@@ -185,15 +185,14 @@ Set-is-not-a-set f =
 
 -- 4. Аксиома K.
 
--- K : {A : Set} (p : A ≡ A) → p ≡ refl
--- K = ?
+K : {A : Set} (p : A ≡ A) → p ≡ refl
+K = {!   !}
 
-{-
 not≡id : not ≡ (λ x → x)
 not≡id =
-  let t = K (SetExt (not , not , not-not , not-not))
-  in {!!}
--}
+  let
+    t = K (SetExt (not , not , not-not , not-not))
+  in {!   !}
 
 -- 5. Группоиды.
 

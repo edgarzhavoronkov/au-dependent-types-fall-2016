@@ -14,14 +14,14 @@ open import lect10
 
 -- 1. Докажите, что (n + m)-элементное множество равно размеченному объединению n- и m-элементного.
 
-helper : (n m : ℕ) → Fin n ⊎ Fin m → Fin (suc n) ⊎ Fin m
-helper n m (inj₁ x) = inj₁ (suc x)
-helper n m (inj₂ y) = inj₂ y
+f-helper : (n m : ℕ) → Fin n ⊎ Fin m → Fin (suc n) ⊎ Fin m
+f-helper n m (inj₁ x) = inj₁ (suc x)
+f-helper n m (inj₂ y) = inj₂ y
 
 f : (n m : ℕ) → Fin (n + m) → Fin n ⊎ Fin m
 f zero m x = inj₂ x
 f (suc n) m zero = inj₁ zero
-f (suc n) m (suc x) = helper n m (f n m x)
+f (suc n) m (suc x) = f-helper n m (f n m x)
 
 g : (n m : ℕ) → Fin n ⊎ Fin m → Fin (n + m)
 g n m (inj₁ x) = inject+ m x
@@ -33,9 +33,15 @@ Fin-sum n m = SetExt (f n m , g n m , proof₁ n m , proof₂ n m)
         proof₁ : (n m : ℕ) → (x : Fin (n + m)) → g n m (f n m x) ≡ x
         proof₁ zero m x = refl
         proof₁ (suc n) m zero = refl
-        proof₁ (suc n) m (suc x) with f n m x
-        proof₁ (suc n₁) m₁ (suc x₁) | inj₁ x = cong suc {!   !}
-        proof₁ (suc n₁) m₁ (suc x) | inj₂ y = cong suc {!   !}
+        proof₁ (suc n) m (suc x) = helper (f n m x) refl
+            where
+                helper : (y : Fin n ⊎ Fin m) → y ≡ f n m x → g (suc n) m (f-helper n m y) ≡ suc x
+                helper (inj₁ x₁) p =
+                    let t = proof₁ n m x
+                    in cong suc (trans (cong (g n m) p) t)
+                helper (inj₂ y) p =
+                    let t = proof₁ n m x
+                    in cong suc (trans (cong (g n m) p) t)
 
         proof₂ : (n m : ℕ) → (y : Fin n ⊎ Fin m) → f n m (g n m y) ≡ y
         proof₂ n m (inj₁ x) = {!   !}
@@ -63,11 +69,20 @@ Set-isGpd A B = subst isSet (sym strong-SetExt) (lm {!   !})
 K : ∀ {l} → Set l → Set l
 K A = (a : A) (p : a ≡ a) → p ≡ refl
 
+D' : Bool → Set
+D' true = ⊥
+D' false = ⊤
+
+
 K-is-false : K Set → ⊥
 K-is-false k =
     let
-        t = k Bool (SetExt (not , not , not-not , not-not))
-    in subst ({!   !}) t tt
+        p = SetExt (not , not , not-not , not-not)
+        t = k Bool p
+        f = not
+        g = ≡-fun {A = Bool} refl
+        wtf = cong-app {A = Bool} {B = λ _ → Bool} {f = f} {g = g} {!   !} true
+    in subst D' wtf tt
 
 -- 4. Докажите, что inv является обратным к **.
 
@@ -115,7 +130,7 @@ from p | true = true₁
 from p | false = false₁
 
 to : Bool₁ → Bool ≡ Bool
-to true₁ = SetExt ((λ x → x) , (λ x → x) , (λ x → refl) , (λ x → refl))
+to true₁ = refl
 to false₁ = SetExt (not , not , not-not , not-not)
 
 
@@ -126,12 +141,7 @@ aut-Bool = SetExt (from , to , to-from , from-to)
         to-from x = {!   !}
 
         from-to : (x : Bool₁) → from (to x) ≡ x
-        from-to true₁ =
-          let
-            t = ≡-fun (SetExt {A = Bool} {B = Bool} ((λ x → x) , (λ x → x) , (λ x → refl) , (λ x → refl)))
-            t' = funExt t (λ x → x) (λ x → {!   !})
-          in {!   !}
-
+        from-to true₁ = refl
         from-to false₁ = {!   !}
 
 -- 7. Докажите, что группа автоморфизмов в общем случае не коммутативна.
@@ -196,25 +206,32 @@ p-eq = SetExt p-Bij
 q-eq : Three ≡ Three
 q-eq = SetExt q-Bij
 
-confuse : (p-eq **' q-eq ≡ q-eq **' p-eq) → ((x : Three) → p (q x) ≡ q (p x) → ⊥)
-confuse p x ()
+-- cong-app (cong ≡-fun p) one : ≡-fun (p-eq **' q-eq) one ≡ ≡-fun (q-eq **' p-eq) one
+confuse : (p-eq **' q-eq ≡ q-eq **' p-eq) → (x : Three) → (≡-fun (p-eq **' q-eq) x ≡ ≡-fun (q-eq **' p-eq) x)
+confuse p = cong-app (cong ≡-fun p)
+
+confuse' : (x : Three) → ≡-fun (p-eq **' q-eq) x ≡ p (q x)
+confuse' one = {!   !}
+confuse' two = {!   !}
+confuse' three = {!   !}
+
+confuse'' : (x : Three) → ≡-fun (q-eq **' p-eq) x ≡ q (p x)
+confuse'' one = {!   !}
+confuse'' two = {!   !}
+confuse'' three = {!   !}
 
 D : Three → Set
 D one = ⊤
 D two = ⊤
 D three = ⊥
 
-wtf : two ≡ three → ⊥
-wtf ()
-
 aut-is-not-comm : ((A : Set) (p q : A ≡ A) → p **' q ≡ q **' p) → ⊥
-aut-is-not-comm p with confuse (p Three p-eq q-eq) one
-... | res = {!   !}
-
-  -- let
-  --   t = p Three p-eq q-eq
-  --   t' = confuse t one
-  -- in {!   !}
+aut-is-not-comm p =
+    let
+        t = p Three p-eq q-eq
+        t' = confuse t one
+        t'' = trans (trans (sym (confuse' one)) t') (confuse'' one)
+    in subst D t'' tt
 
 -- 8. Докажите, что isProp является предикатом.
 
